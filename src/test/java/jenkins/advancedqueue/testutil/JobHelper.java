@@ -1,24 +1,22 @@
 package jenkins.advancedqueue.testutil;
 
-import hudson.Launcher;
-import hudson.matrix.AxisList;
-import hudson.matrix.MatrixProject;
-import hudson.matrix.TextAxis;
-import hudson.model.BuildListener;
-import hudson.model.AbstractBuild;
-import hudson.model.Cause;
-import hudson.model.FreeStyleProject;
-import hudson.model.Project;
-import hudson.tasks.Builder;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import jenkins.model.Jenkins;
-
 import org.jvnet.hudson.test.JenkinsRule;
+
+import hudson.Launcher;
+import hudson.matrix.AxisList;
+import hudson.matrix.MatrixProject;
+import hudson.matrix.TextAxis;
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.FreeStyleProject;
+import hudson.tasks.Builder;
+import jenkins.model.Jenkins;
 
 public class JobHelper {
 
@@ -66,7 +64,7 @@ public class JobHelper {
 	public List<MatrixProject> createMatrixProjects(int numberOfProjects) throws Exception {
 		List<MatrixProject> projects = new ArrayList<MatrixProject>(numberOfProjects);
 		for (int i = 0; i < numberOfProjects; i++) {
-			MatrixProject project = j.createMatrixProject("Matrix " + i);
+			MatrixProject project = j.getInstance().createProject(MatrixProject.class, "Matrix " + i);
 			project.getBuildersList().add(new TestBuilder(100));
 	        AxisList axes = new AxisList();
 	        axes.add(new TextAxis(i + "A1", i + "A2", i + "A3"));
@@ -80,7 +78,7 @@ public class JobHelper {
 		List<MatrixProject> projects = createMatrixProjects(causes.length);
 		// Scheduling executors is zero
 		for (int i = 0; i < causes.length; i++) {
-			projects.get(i).scheduleBuild(0, causes[i]);
+			projects.get(i).scheduleBuild(1, causes[i]);
 			Thread.sleep(100);
 		}
 		return this;
@@ -89,7 +87,7 @@ public class JobHelper {
 	public JobHelper scheduleProject(String name, Cause cause) throws Exception {
 		FreeStyleProject project = createProject(name);
 		// Scheduling executors is zero
-		project.scheduleBuild(0, cause);
+		project.scheduleBuild(1, cause);
 		Thread.sleep(100);
 		return this;
 	}
@@ -98,7 +96,7 @@ public class JobHelper {
 		List<FreeStyleProject> projects = createProjects(causes.length);
 		// Scheduling executors is zero
 		for (int i = 0; i < causes.length; i++) {
-			projects.get(i).scheduleBuild(0, causes[i]);
+			projects.get(i).scheduleBuild(1, causes[i]);
 			Thread.sleep(100);
 		}
 		return this;
@@ -106,9 +104,9 @@ public class JobHelper {
 
 	public void go() throws Exception {
 		// Set the executors to one and restart
-		Jenkins.getInstance().setNumExecutors(1);
+		Jenkins.get().setNumExecutors(1);
 		// TODO: is there any other way to make the 1 take effect than a reload?
-		Jenkins.getInstance().reload();
+		Jenkins.get().reload();
 	}
 
 }

@@ -48,17 +48,48 @@ import com.synopsys.arc.jenkinsci.plugins.jobrestrictions.restrictions.JobRestri
  * @author Magnus Sandberg
  * @since 3.3
  */
+@Extension
 public class PrioritySorterRestriction extends JobRestriction {
 	
+	private static final long serialVersionUID = -9006082445139117284L;
+
 	private final static Logger LOGGER = Logger.getLogger(PrioritySorterRestriction.class.getName());
+
+	private int fromPriority, toPriority;
+	
+	public int getFromPriority()	{ return fromPriority; }
+	public int getToPriority() 		{ return toPriority; }
+
+	public PrioritySorterRestriction() {
+	}
+
+	@DataBoundConstructor
+	public PrioritySorterRestriction(int fromPriority, int toPriority) {
+		this.fromPriority = fromPriority;
+		this.toPriority = toPriority;
+	}
+
+	@Override
+	public boolean canTake(BuildableItem buildableItem) {
+		ItemInfo item = QueueItemCache.get().getItem(buildableItem.getId());
+		if(item == null) {
+			LOGGER.warning("Missing ItemInfo for [" + buildableItem.task.getDisplayName() + "] allowing execution.");
+			return true;
+		}
+		int priority = item.getPriority();
+		return priority >= fromPriority && priority <= toPriority;
+	}
+
+	@Override
+	public boolean canTake(Run run) {
+		return true;
+	}
 
 	@Extension(optional = true)
 	public static class DescriptorImpl extends JobRestrictionDescriptor {
 
 		@Override
-		public String getDisplayName() {
-			return Messages.Priority_from_prioritySorter();
-		}
+		public String getDisplayName() { return Messages.Priority_from_prioritySorter(); }
 
 		public ListBoxModel doFillFromPriorityItems() {
 			return PrioritySorterUtil.fillPriorityItems(PrioritySorterConfiguration.get().getStrategy()
@@ -73,7 +104,7 @@ public class PrioritySorterRestriction extends JobRestriction {
 		public ListBoxModel doUpdateFromPriorityItems(@QueryParameter("value") String strValue) {
 			int value = 1;
 			try {
-				value = Integer.valueOf(strValue);
+				value = Integer.parseInt(strValue);
 			} catch (NumberFormatException e) {
 				// Use default value
 			}
@@ -81,40 +112,5 @@ public class PrioritySorterRestriction extends JobRestriction {
 					.getStrategy().getNumberOfPriorities());
 			return items;
 		}
-
-	}
-
-	private int fromPriority;
-	
-	private int toPriority;
-
-	public int getFromPriority() {
-		return fromPriority;
-	}
-
-	public int getToPriority() {
-		return toPriority;
-	}
-
-	@DataBoundConstructor
-	public PrioritySorterRestriction(int fromPriority, int toPriority) {
-		this.fromPriority = fromPriority;
-		this.toPriority = toPriority;
-	}
-
-	@Override
-	public boolean canTake(BuildableItem buildableItem) {
-		ItemInfo item = QueueItemCache.get().getItem(buildableItem.id);
-		if(item == null) {
-			LOGGER.warning("Missing ItemInfo for [" + buildableItem.task.getDisplayName() + "] allowing execution.");
-			return true;
-		}
-		int priority = item.getPriority();
-		return priority >= fromPriority && priority <= toPriority;
-	}
-
-	@Override
-	public boolean canTake(Run run) {
-		return true;
 	}
 }
